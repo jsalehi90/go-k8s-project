@@ -1,0 +1,65 @@
+variables:
+  IMAGE_NAME: k8s-project
+
+stages:
+  - build-dev
+  - deploy-dev
+  - build-prod
+  - deploy-prod
+
+build-dev:
+  stage: build-dev
+  image: docker
+  script:
+    - docker login -u $NEXUS_USER -p $NEXUS_PASSWORD docker.registry.local
+    - docker build -t docker.registry.local/${IMAGE_NAME}:$CI_PIPELINE_ID .
+    - docker push docker.registry.local/${IMAGE_NAME}:$CI_PIPELINE_ID
+  only:
+    - dev
+
+include:
+  - local: test/gitlab-test.yml
+
+deploy-dev:
+  stage: deploy-dev
+  image: dtzar/helm-kubectl:3.18
+  script:
+    - mkdir -p ~/.kube
+    - chmod 700 ~/.kube
+    - echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+    - sed -i "s/latest/$CI_PIPELINE_ID/g" k8s/dev/Deployment.yaml
+    - kubectl -n dev apply -f k8s/dev/ConfigMap.yaml
+    - kubectl -n dev apply -f k8s/dev/Service.yaml
+    - kubectl -n dev apply -f k8s/dev/Deployment.yaml
+    - kubectl -n dev apply -f k8s/dev/Ingress.yaml
+  only:
+    - dev
+
+#################PROD#####################
+
+build-prod:
+  stage: build-prod
+  image: docker
+  script:
+    - docker login -u $NEXUS_USER -p $NEXUS_PASSWORD docker.registry.local
+    - docker build -t docker.registry.local/${IMAGE_NAME}:$CI_COMMIT_TAG .
+    - docker push docker.registry.local/${IMAGE_NAME}:$CI_COMMIT_TAG
+  only:
+    - master
+    - tags
+
+deploy-prod:
+  stage: deploy-prod
+  image: dtzar/helm-kubectl:3.18
+  script:
+    - mkdir -p ~/.kube
+    - chmod 700 ~/.kube
+    - echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+    - sed -i "s/latest/$CI_COMMIT_TAG/g" k8s/prod/Deployment.yaml
+    - kubectl -n prod apply -f k8s/prod/ConfigMap.yaml
+    - kubectl -n prod apply -f k8s/prod/Service.yaml
+    - kubectl -n prod apply -f k8s/prod/Deployment.yaml
+    - kubectl -n prod apply -f k8s/prod/Ingress.yaml
+  only:
+    - tags
+  when: manual

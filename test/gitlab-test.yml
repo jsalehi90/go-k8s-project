@@ -1,0 +1,15 @@
+# test/gitlab-test.yml
+
+stages:
+  - test
+
+run-tests:
+  stage: test
+  image: golang:1.23-alpine
+  script:
+    - chmod +x ./test.sh
+    - ./test.sh
+  only:
+    - dev
+    - master
+    - tags

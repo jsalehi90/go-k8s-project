@@ -1,0 +1,18 @@
+apiVersion: v1
+king: Service
+metadata:
+  name: devops-website
+  namespace: dev
+  labels:
+    name: devops-website
+    instance: devops-website
+spec:
+  type: ClusterIP
+  selector:
+    name: devops-website
+    instance: devops-website
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP

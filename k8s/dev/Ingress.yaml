@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: devops-website
+  namespace: dev
+  labels:
+    name: devops-website
+    instance: devops-website
+spec:
+  ingressClassName: nginx # kubectl get ingressclasses.networking.k8s.io
+  rules:
+    - host: "app-dev.devops.ir"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: devops-website
+                port:
+                  number: 80

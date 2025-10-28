@@ -1,0 +1,36 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devops-website
+  namespace: dev
+  labels:
+    name: devops-website
+    instance: devops-website
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      name: devops-website
+      instance: devops-website
+  template:
+    metadata:
+      labels:
+        name: devops-website
+        instance: devops-website
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: devops-website
+          image: docker.registry.local/k8s-project:latest
+          envFrom:
+            - configMapRef:
+                name: devops-website
+          env:
+            - name: CLIENT_URL
+              value: http://client.dev.svc.cluster.local
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
